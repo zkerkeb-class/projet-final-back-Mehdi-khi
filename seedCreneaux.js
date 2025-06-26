@@ -1,42 +1,51 @@
+// seedCreneaux.js
 import mongoose from "mongoose";
-import "dotenv/config";
+import dotenv from "dotenv";
+import Terrain from "./models/terrain.js";
 import Creneau from "./models/creneau.js";
 
-const MONGO_URI = process.env.MONGO_URI;
+dotenv.config();
 
-const seed = async () => {
+const generateCreneaux = async () => {
   try {
-    await mongoose.connect(MONGO_URI);
-    console.log("✅ Connecté à MongoDB");
+    await mongoose.connect(process.env.MONGO_URI);
+    const terrains = await Terrain.find();
 
-    // ⚠️ Vide la collection pour repartir propre
-    await Creneau.deleteMany();
-    console.log("🗑️ Ancien contenu supprimé");
+    const jours = 5; // nombre de jours à générer
+    const heures = Array.from({ length: 13 }, (_, i) => 10 + i); // 10h à 22h
 
-    const dates = ["2025-06-18", "2025-06-19"];
-    const heures = ["10:00", "12:00", "14:00", "16:00", "18:00", "20:00"];
     const creneaux = [];
 
-    for (let terrainId = 1; terrainId <= 6; terrainId++) {
-      for (let date of dates) {
-        for (let heure of heures) {
+    const today = new Date();
+
+    for (const terrain of terrains) {
+      for (let j = 0; j < jours; j++) {
+        const date = new Date(today);
+        date.setDate(today.getDate() + j);
+        const dateStr = date.toISOString().split("T")[0];
+
+        for (const heure of heures) {
+          const heureStr = `${heure.toString().padStart(2, "0")}:00`;
+
           creneaux.push({
-            terrainId,
-            date,
-            heure,
+            terrainId: terrain._id,
+            date: dateStr,
+            heure: heureStr,
             disponible: true,
           });
         }
       }
     }
 
-    const result = await Creneau.insertMany(creneaux);
-    console.log(`✅ ${result.length} créneaux insérés`);
-    mongoose.connection.close();
+    await Creneau.deleteMany(); // vide les anciens créneaux
+    await Creneau.insertMany(creneaux);
+
+    console.log(`✅ ${creneaux.length} créneaux insérés`);
+    process.exit();
   } catch (err) {
-    console.error("❌ Erreur lors du seed :", err.message);
+    console.error("❌ Erreur :", err.message);
     process.exit(1);
   }
 };
 
-seed();
+generateCreneaux();

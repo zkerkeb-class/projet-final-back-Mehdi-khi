@@ -2,15 +2,16 @@ import mongoose from "mongoose";
 
 const creneauSchema = new mongoose.Schema({
   terrainId: {
-    type: Number, 
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Terrain", // 👈 nom du modèle Mongo
     required: true,
   },
   date: {
-    type: String, 
+    type: String,
     required: true,
   },
   heure: {
-    type: String, 
+    type: String,
     required: true,
   },
   disponible: {

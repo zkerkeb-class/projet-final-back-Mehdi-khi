@@ -1,8 +1,9 @@
 import express from 'express';
-import { getAllTerrains } from '../controllers/terrainsController.js';
+import { getAllTerrains ,getTerrainById } from '../controllers/terrainsController.js';
 
 const router = express.Router();
 
 router.get('/', getAllTerrains);
+router.get('/:id', getTerrainById); 
 
 export default router;

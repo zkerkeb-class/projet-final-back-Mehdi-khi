@@ -1,12 +1,20 @@
-export const getAllTerrains = (req, res) => {
-  const terrains = [
-    { id: 1, nom: "Stade 1", type: "intérieur", clim: true, surface: "grande", image: "/images/stade.png" },
-    { id: 2, nom: "Stade 2", type: "intérieur", clim: true, surface: "standard", image: "/images/stade.png" },
-    { id: 3, nom: "Stade 3", type: "intérieur", clim: false, surface: "standard", image: "/images/stade.png" },
-    { id: 4, nom: "Stade 4", type: "extérieur", clim: false, surface: "grande", image: "/images/stade.png" },
-    { id: 5, nom: "Stade 5", type: "extérieur", clim: false, surface: "standard", image: "/images/stade.png" },
-    { id: 6, nom: "Stade 6", type: "extérieur", clim: false, surface: "standard", image: "/images/stade.png" }
-  ];
+import Terrain from "../models/terrain.js";
 
-  res.status(200).json(terrains);
+export const getAllTerrains = async (req, res) => {
+  try {
+    const terrains = await Terrain.find();
+    res.status(200).json(terrains);
+  } catch (err) {
+    res.status(500).json({ message: "Erreur serveur", error: err.message });
+  }
+};
+
+export const getTerrainById = async (req, res) => {
+  try {
+    const terrain = await Terrain.findById(req.params.id);
+    if (!terrain) return res.status(404).json({ message: "Terrain introuvable" });
+    res.json(terrain);
+  } catch (err) {
+    res.status(500).json({ message: "Erreur serveur", error: err.message });
+  }
 };
