@@ -1,5 +1,5 @@
 import Reservation from "../models/reservation.js";
-import Creneau from "../models/creneau.js"; // ✅ on importe le modèle
+import Creneau from "../models/creneau.js"; 
 
 export const creerReservation = async (req, res) => {
   const { userId, creneauId } = req.body;
@@ -48,5 +48,35 @@ export const annulerReservation = async (req, res) => {
     res.status(200).json({ message: "Réservation annulée avec succès" });
   } catch (err) {
     res.status(500).json({ message: "Erreur serveur", error: err.message });
+  }
+};
+// PUT /api/reservations/:id
+ export const updateReservationCreneau = async (req, res) => {
+  const reservationId = req.params.id;
+  const { nouveauCreneauId } = req.body;
+
+  try {
+    const reservation = await Reservation.findById(reservationId);
+    if (!reservation) return res.status(404).json({ message: "Réservation introuvable" });
+
+    const nouveauCreneau = await Creneau.findById(nouveauCreneauId);
+    if (!nouveauCreneau || !nouveauCreneau.disponible)
+      return res.status(400).json({ message: "Créneau non valide ou déjà réservé" });
+
+    // libérer l'ancien créneau
+    await Creneau.findByIdAndUpdate(reservation.creneauId, { disponible: true });
+
+    // assigner le nouveau créneau
+    reservation.creneauId = nouveauCreneauId;
+    await reservation.save();
+
+    // bloquer le nouveau créneau
+    nouveauCreneau.disponible = false;
+    await nouveauCreneau.save();
+
+    res.status(200).json({ message: "Créneau modifié avec succès", reservation });
+  } catch (err) {
+    console.error("Erreur modification créneau :", err);
+    res.status(500).json({ message: "Erreur serveur" });
   }
 };
