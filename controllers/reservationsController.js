@@ -5,22 +5,42 @@ export const creerReservation = async (req, res) => {
   const { userId, creneauId } = req.body;
 
   try {
-  const reservation = await Reservation.create({ userId, creneauId });
-  await Creneau.findByIdAndUpdate(creneauId, { disponible: false });
-  res.status(201).json(reservation);
-} catch (err) {
-  if (err.code === 11000) {
-    return res.status(400).json({ message: "Réservation déjà existante." });
-  }
-  res.status(500).json({ message: "Erreur serveur", error: err.message });
-}
-if (res1.status === 400) {
-  const errorData = await res1.json();
-  setMessage(`⚠️ ${errorData.message}`);
-  return;
-}
+    // 1. Créer la réservation
+    await Reservation.create({ userId, creneauId });
 
+    // 2. Marquer le créneau comme réservé
+    await Creneau.findByIdAndUpdate(creneauId, { disponible: false });
+
+    // 3. Récupérer la réservation complète (avec terrain)
+    const reservation = await Reservation.findOne({ userId, creneauId })
+      .populate({
+        path: "creneauId",
+        populate: { path: "terrainId" },
+      });
+
+    // 4. Vérification au cas où
+    if (!reservation || !reservation.creneauId || !reservation.creneauId.terrainId) {
+      return res.status(404).json({ message: "Erreur récupération des données de réservation" });
+    }
+
+    // 5. Structurer la réponse pour le front
+    res.status(201).json({
+      date: reservation.creneauId.date,
+      heure: reservation.creneauId.heure,
+      terrain: {
+        nom: reservation.creneauId.terrainId.nom,
+        prix: reservation.creneauId.terrainId.prix
+      }
+    });
+
+  } catch (err) {
+    if (err.code === 11000) {
+      return res.status(400).json({ message: "Réservation déjà existante." });
+    }
+    res.status(500).json({ message: "Erreur serveur", error: err.message });
+  }
 };
+
 
 export const getReservationsByUser = async (req, res) => {
   const { userId } = req.params;
